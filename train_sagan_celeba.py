@@ -17,7 +17,7 @@ flags.DEFINE_integer(name='z_size', default=128,
                      help="Input random vector dimension")
 flags.DEFINE_float(name='learning_rate_generator', default=0.0001,
                    help="Learning rate for the generator net")
-flags.DEFINE_float(name='learning_rate_discriminator', default=0.0001,
+flags.DEFINE_float(name='learning_rate_discriminator', default=0.0004,
                    help="Learning rate for the discriminator net")
 flags.DEFINE_integer(name='batch_size', default=128,
                      help="Size of the input batch")
@@ -31,14 +31,14 @@ flags.DEFINE_integer(name='total_train_steps', default=600000,
                      help="Total number of training steps")
 flags.DEFINE_string(name='dtype', default="float32",
                     help="Training Float-point precision")
-flags.DEFINE_integer(name='record_summary_after_n_steps', default=300,
+flags.DEFINE_integer(name='record_summary_after_n_steps', default=200,
                      help="Number of interval steps to recording summaries")
 flags.DEFINE_integer(name='number_of_test_images', default=16,
                      help="Number of test images to generate during evaluation")
 flags.DEFINE_integer(name='model_id', default=12223,
                      help="Load this model if found")
 
-REPORT_INTERVAL = 250
+REPORT_INTERVAL = 51200
 train_dataset = tf.data.TFRecordDataset(["./dataset/celeba.tfrecord"])
 train_dataset = train_dataset.map(tf_record_parser, num_parallel_calls=8)
 train_dataset = train_dataset.map(
@@ -113,14 +113,20 @@ for _, (batch_real_images) in enumerate(train_dataset):
 
         with tf.GradientTape() as g_tape, tf.GradientTape() as d_tape:
             # run the generator with the random noise batch
-            g_model = generator_net(fake_input, is_training=True)
+            g_images = generator_net(fake_input, is_training=True)
 
             # run the discriminator with real input images
+            # d_logits = discriminator_net(
+            #     tf.concat([batch_real_images, g_images], axis=0), is_training=True)
+
+            # d_logits_real = d_logits[:flags.FLAGS.batch_size]
+            # d_logits_fake = d_logits[flags.FLAGS.batch_size:]
+
             d_logits_real = discriminator_net(
                 batch_real_images, is_training=True)
 
             # run the discriminator with fake input images (images from the generator)
-            d_logits_fake = discriminator_net(g_model, is_training=True)
+            d_logits_fake = discriminator_net(g_images, is_training=True)
 
             # compute the generator loss
             gen_loss = generator_loss(d_logits_fake)
@@ -131,7 +137,7 @@ for _, (batch_real_images) in enumerate(train_dataset):
         tf.contrib.summary.scalar('generator_loss', gen_loss)
         tf.contrib.summary.scalar('discriminator_loss', dis_loss)
         tf.contrib.summary.image(
-            'generator_image', tf.to_float(g_model), max_images=5)
+            'generator_image', tf.to_float(g_images), max_images=5)
 
         # get all the discriminator variables, including the tfe variables
         discriminator_variables = discriminator_net.variables
@@ -153,9 +159,9 @@ for _, (batch_real_images) in enumerate(train_dataset):
                                             global_step=global_step)
 
     counter = global_step.numpy()
-    t.update()
+    t.update(flags.FLAGS.batch_size * 2)  # TODO: figure out why need to * 2
 
-    if counter % REPORT_INTERVAL == 0:
+    if counter % (REPORT_INTERVAL // flags.FLAGS.batch_size) == 0:
         print("Current step:", counter)
         with tf.contrib.summary.always_record_summaries():
             generated_samples = generator_net(
