@@ -2,6 +2,8 @@ import tensorflow as tf
 tf.enable_eager_execution()
 from utils import tf_record_parser, normalizer
 from utils import save_model
+from tqdm import tqdm
+
 print(tf.__version__)
 
 tfe = tf.contrib.eager
@@ -15,9 +17,9 @@ flags.DEFINE_integer(name='z_size', default=128,
                      help="Input random vector dimension")
 flags.DEFINE_float(name='learning_rate_generator', default=0.0001,
                    help="Learning rate for the generator net")
-flags.DEFINE_float(name='learning_rate_discriminator', default=0.0004,
+flags.DEFINE_float(name='learning_rate_discriminator', default=0.0001,
                    help="Learning rate for the discriminator net")
-flags.DEFINE_integer(name='batch_size', default=32,
+flags.DEFINE_integer(name='batch_size', default=128,
                      help="Size of the input batch")
 flags.DEFINE_float(name='alpha', default=0.1,
                    help="Leaky ReLU negative slope")
@@ -36,19 +38,24 @@ flags.DEFINE_integer(name='number_of_test_images', default=16,
 flags.DEFINE_integer(name='model_id', default=12223,
                      help="Load this model if found")
 
-
+REPORT_INTERVAL = 250
 train_dataset = tf.data.TFRecordDataset(["./dataset/celeba.tfrecord"])
-train_dataset = train_dataset.map(tf_record_parser, num_parallel_calls=4)
-train_dataset = train_dataset.map(lambda image: normalizer(
-    image, dtype=flags.FLAGS.dtype), num_parallel_calls=4)
-train_dataset = train_dataset.shuffle(1000)
+train_dataset = train_dataset.map(tf_record_parser, num_parallel_calls=8)
+train_dataset = train_dataset.map(
+    lambda image: normalizer(
+        image, dtype=flags.FLAGS.dtype), num_parallel_calls=8
+)
+train_dataset = train_dataset.shuffle(REPORT_INTERVAL)
 train_dataset = train_dataset.repeat()
 train_dataset = train_dataset.batch(flags.FLAGS.batch_size)
-# iterator = train_dataset.make_one_shot_iterator()
-# print("next", next(iterator))
-generator_net = Generator(dtype=flags.FLAGS.dtype)
+
+
+generator_net = Generator(
+    dtype=flags.FLAGS.dtype
+)
 discriminator_net = Discriminator(
-    alpha=flags.FLAGS.alpha, dtype=flags.FLAGS.dtype)
+    alpha=flags.FLAGS.alpha, dtype=flags.FLAGS.dtype
+)
 
 basepath = "./models/" + str(flags.FLAGS.model_id)
 logdir = os.path.join(basepath, "logs")
@@ -96,6 +103,8 @@ fake_input_test = tf.random_normal(shape=(
     flags.FLAGS.number_of_test_images, flags.FLAGS.z_size), dtype=flags.FLAGS.dtype)
 
 # print("train_dateset", train_dataset)
+t = tqdm(total=REPORT_INTERVAL)
+
 for _, (batch_real_images) in enumerate(train_dataset):
     fake_input = tf.random_normal(
         shape=(flags.FLAGS.batch_size, flags.FLAGS.z_size), dtype=flags.FLAGS.dtype)
@@ -144,14 +153,16 @@ for _, (batch_real_images) in enumerate(train_dataset):
                                             global_step=global_step)
 
     counter = global_step.numpy()
+    t.update()
 
-    if counter % 1000 == 0:
+    if counter % REPORT_INTERVAL == 0:
         print("Current step:", counter)
         with tf.contrib.summary.always_record_summaries():
             generated_samples = generator_net(
                 fake_input_test, is_training=False)
             tf.contrib.summary.image('test_generator_image', tf.to_float(
                 generated_samples), max_images=16)
+        t = tqdm(total=REPORT_INTERVAL)
 
     if counter % 15000 == 0:
         # save and download the mode
