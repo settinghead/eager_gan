@@ -35,8 +35,8 @@ flags.DEFINE_integer(name='record_summary_after_n_steps', default=200,
                      help="Number of interval steps to recording summaries")
 flags.DEFINE_integer(name='number_of_test_images', default=16,
                      help="Number of test images to generate during evaluation")
-flags.DEFINE_integer(name='model_id', default=12223,
-                     help="Load this model if found")
+flags.DEFINE_string(name='model_id', default="no_spectral_norm",
+                    help="Load this model if found")
 
 REPORT_INTERVAL = 51200
 train_dataset = tf.data.TFRecordDataset(["./dataset/celeba.tfrecord"])
@@ -57,7 +57,7 @@ discriminator_net = Discriminator(
     alpha=flags.FLAGS.alpha, dtype=flags.FLAGS.dtype
 )
 
-basepath = "./models/" + str(flags.FLAGS.model_id)
+basepath = "./models/" + flags.FLAGS.model_id
 logdir = os.path.join(basepath, "logs")
 print("Base folder:", basepath)
 tf_board_writer = tf.contrib.summary.create_file_writer(logdir)
@@ -141,14 +141,14 @@ for _, (batch_real_images) in enumerate(train_dataset):
 
         # get all the discriminator variables, including the tfe variables
         discriminator_variables = discriminator_net.variables
-        discriminator_variables.append(discriminator_net.attention.gamma)
+        # discriminator_variables.append(discriminator_net.attention.gamma)
 
         discriminator_grads = d_tape.gradient(
             dis_loss, discriminator_variables)
 
         # get all the discriminator variables, including the tfe variables
         generator_variables = generator_net.variables
-        generator_variables.append(generator_net.attention.gamma)
+        # generator_variables.append(generator_net.attention.gamma)
 
         generator_grads = g_tape.gradient(gen_loss, generator_variables)
 
