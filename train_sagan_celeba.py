@@ -13,7 +13,7 @@ from celeb.model import Generator, Discriminator
 from libs.loss import discriminator_loss, generator_loss
 
 flags = tf.app.flags
-flags.DEFINE_string(name='model_id', default="vanilla_conv",
+flags.DEFINE_string(name='model_id', default="original_paper",
                     help="Load this model if found")
 
 flags.DEFINE_integer(name='z_size', default=128,
