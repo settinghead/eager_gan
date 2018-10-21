@@ -13,6 +13,9 @@ from celeb.model import Generator, Discriminator
 from libs.loss import discriminator_loss, generator_loss
 
 flags = tf.app.flags
+flags.DEFINE_string(name='model_id', default="vanilla_conv",
+                    help="Load this model if found")
+
 flags.DEFINE_integer(name='z_size', default=128,
                      help="Input random vector dimension")
 flags.DEFINE_float(name='learning_rate_generator', default=0.0001,
@@ -35,8 +38,7 @@ flags.DEFINE_integer(name='record_summary_after_n_steps', default=200,
                      help="Number of interval steps to recording summaries")
 flags.DEFINE_integer(name='number_of_test_images', default=16,
                      help="Number of test images to generate during evaluation")
-flags.DEFINE_string(name='model_id', default="no_spectral_norm",
-                    help="Load this model if found")
+
 
 REPORT_INTERVAL = 51200
 train_dataset = tf.data.TFRecordDataset(["./dataset/celeba.tfrecord"])
