@@ -20,6 +20,11 @@ def tf_record_parser(record):
 
     # reshape input and annotation images
     image = tf.reshape(image, (height, width, 3), name="image_reshape")
+    image = tf.image.resize_image_with_crop_or_pad(image, 128, 128)
+
+    image = tf.image.random_flip_left_right(image)
+    # image = tf.contrib.image.rotate([image], tf.random_uniform(
+    #     [1], maxval=math.pi / 10))[0]
     return tf.to_float(image)
 
 
