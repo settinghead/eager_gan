@@ -1,4 +1,5 @@
 import tensorflow as tf
+import math
 
 
 def save_model(root, checkpoint_prefix):
@@ -29,7 +30,9 @@ def tf_record_parser(record):
 
 
 def normalizer(image, dtype):
-    image = tf.cast(image, dtype=dtype) / 128.0 - 1.0
+    # Not sure which one works better yet
+    image = tf.cast(image, dtype=dtype) / 255.0 - 0.5
+    # image = tf.cast(image, dtype=dtype) / 128.0 - 1.0
     # noise addition normalization
     image += tf.random_uniform(shape=tf.shape(image),
                                minval=0., maxval=1./128., dtype=dtype)
