@@ -46,7 +46,7 @@ train_dataset = train_dataset.map(
     lambda image: normalizer(
         image, dtype=flags.FLAGS.dtype), num_parallel_calls=8
 )
-train_dataset = train_dataset.shuffle(REPORT_INTERVAL)
+train_dataset = train_dataset.shuffle(1024)
 train_dataset = train_dataset.repeat()
 train_dataset = train_dataset.batch(flags.FLAGS.batch_size)
 
