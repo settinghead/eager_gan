@@ -171,7 +171,7 @@ for _, (batch_real_images) in enumerate(train_dataset):
                 generated_samples), max_images=16)
         t = tqdm(total=REPORT_INTERVAL)
 
-    if counter % 15000 == 0:
+    if counter % 10000 == 0:
         # save and download the mode
         save_model(gen_root, gen_checkpoint_prefix)
         save_model(disc_root, disc_checkpoint_prefix)
