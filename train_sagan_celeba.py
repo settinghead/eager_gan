@@ -4,7 +4,7 @@ from utils import tf_record_parser, normalizer
 from utils import save_model
 from tqdm import tqdm
 
-print(tf.__version__)
+print("Tensorflow version", tf.__version__)
 
 tfe = tf.contrib.eager
 
